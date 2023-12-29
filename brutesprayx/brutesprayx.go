@@ -28,6 +28,7 @@ var NAME_MAP = map[string]string{
 	"pop3s":          "pop3",
 	"iss-realsecure": "vmauthd",
 	"snmptrap":       "snmp",
+	"mysql":          "mysql",
 	//"ms-wbt-server":  "rdp",
 }
 
@@ -178,25 +179,6 @@ func writeToFile(filename string, content string) error {
 	return nil
 }
 
-func countHosts(fileName string) (int, error) {
-	file, err := os.Open(fileName)
-	if err != nil {
-		return 0, err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	count := 0
-	for scanner.Scan() {
-		count++
-	}
-	if err := scanner.Err(); err != nil {
-		return 0, err
-	}
-
-	return count, nil
-}
-
 func isFile(fileName string) bool {
 	if _, err := os.Stat(fileName); err == nil && filepath.Ext(fileName) == "" {
 		return true
@@ -229,6 +211,8 @@ func brute(h parse.Host, u string, p string) {
 		result = modules.BrutePOP3(h.Host, h.Port, u, p)
 	case "snmp":
 		result = modules.BrutePOP3(h.Host, h.Port, u, p)
+	case "mysql":
+		result = modules.BruteMYSQL(h.Host, h.Port, u, p)
 	//case "rdp":
 	//	result = modules.BruteRDP(h.Host, h.Port, u, p)
 	default:
@@ -368,7 +352,7 @@ func Execute() {
 							bar.Increment()
 						}()
 						service := mapService(h.Service)
-						if *serviceType != "all" && !contains(supportedServices, service) {
+						if *serviceType != "all" && !contains(getSupportedServices(*serviceType), service) {
 							return
 						}
 						bruteDone := make(chan bool)
