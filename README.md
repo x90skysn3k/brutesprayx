@@ -93,6 +93,3 @@ List example
 ssh:127.0.0.1:22
 ftp:127.0.0.1:21
 ```
-
-# Changelog
-Changelog notes are available at [CHANGELOG.md](https://github.com/x90skysn3k/brutesprayx/blob/master/CHANGELOG.md)
