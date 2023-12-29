@@ -69,7 +69,7 @@ func Banner(banner_flag bool) {
 Created by: Shane Young/@t1d3nio && Jacob Robles/@shellfail
 Inspired by: Leon Johnson/@sho-luv`
 	//ascii art by: Cara Pearson
-	if banner_flag == false {
+	if !banner_flag {
 		horns := color_banner(banner)
 		pterm.Println(horns)
 		brutespray := color_banner(banner2)

@@ -279,12 +279,15 @@ func Execute() {
 		os.Exit(1)
 	}
 
-	supportedServices := []string{}
-	if *serviceType != "all" {
-		supportedServices = strings.Split(*serviceType, ",")
-		for i := range supportedServices {
-			supportedServices[i] = strings.TrimSpace(supportedServices[i])
+	getSupportedServices := func(serviceType string) []string {
+		if serviceType != "all" {
+			supportedServices := strings.Split(serviceType, ",")
+			for i := range supportedServices {
+				supportedServices[i] = strings.TrimSpace(supportedServices[i])
+			}
+			return supportedServices
 		}
+		return nil
 	}
 
 	hosts, err := parseFile(*file)
@@ -389,7 +392,7 @@ func Execute() {
 		sem <- struct{}{}
 	}
 	bar.Stop()
-	if len(supportedServices) > 0 {
-		pterm.DefaultSection.Println("Supported services:", strings.Join(supportedServices, ", "))
+	if len(getSupportedServices(*serviceType)) > 0 {
+		pterm.DefaultSection.Println("Supported services:", strings.Join(getSupportedServices(*serviceType), ", "))
 	}
 }
