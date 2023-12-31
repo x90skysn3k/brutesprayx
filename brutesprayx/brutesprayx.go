@@ -222,7 +222,7 @@ func Execute() {
 
 	modules.Banner(*quiet)
 
-	if *user == "" || *password == "" {
+	if *host == "" && *file == "" {
 		flag.Usage()
 		os.Exit(1)
 	}
