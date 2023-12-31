@@ -17,7 +17,7 @@ import (
 	"github.com/x90skysn3k/brutesprayx/parse"
 )
 
-var version = "v2.0.1"
+var version = "v2.1.0"
 
 var NAME_MAP = map[string]string{
 	"ms-sql-s":       "mssql",
