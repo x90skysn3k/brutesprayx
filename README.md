@@ -38,6 +38,8 @@ Command: ```brutesprayx -H ssh://127.0.0.1:22 -u userlist -p passlist```
 
 ## Examples
 
+<img src="https://i.imgur.com/bZQt3Lv.gif" width="512">
+
 #### Using Custom Wordlists:
 
 ```brutesprayx -f nmap.gnmap -u /usr/share/wordlist/user.txt -p /usr/share/wordlist/pass.txt -t 5 ```
