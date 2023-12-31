@@ -213,6 +213,8 @@ func brute(h parse.Host, u string, p string) {
 		result = modules.BrutePOP3(h.Host, h.Port, u, p)
 	case "mysql":
 		result = modules.BruteMYSQL(h.Host, h.Port, u, p)
+	case "vmauthd":
+		result = modules.BruteVMAuthd(h.Host, h.Port, u, p)
 	//case "rdp":
 	//	result = modules.BruteRDP(h.Host, h.Port, u, p)
 	default:

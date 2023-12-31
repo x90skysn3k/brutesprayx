@@ -276,7 +276,7 @@ func ParseNessus(filename string) (map[Host]int, error) {
 	return hosts, nil
 }
 func ParseList(filename string) (map[Host]int, error) {
-	supportedServices := []string{"ssh", "ftp", "smtp", "mssql", "telnet", "smbnt", "postgres", "imap", "pop3", "snmp", "mysql"}
+	supportedServices := []string{"ssh", "ftp", "smtp", "mssql", "telnet", "smbnt", "postgres", "imap", "pop3", "snmp", "mysql", "iss-realsecure"}
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -314,7 +314,7 @@ func ParseList(filename string) (map[Host]int, error) {
 	return hosts, nil
 }
 func (h *Host) Parse(host string) error {
-	supportedServices := []string{"ssh", "ftp", "smtp", "mssql", "telnet", "smbnt", "postgres", "imap", "pop3", "snmp", "mysql"}
+	supportedServices := []string{"ssh", "ftp", "smtp", "mssql", "telnet", "smbnt", "postgres", "imap", "pop3", "snmp", "mysql", "vmauthd"}
 
 	parts := strings.Split(host, "://")
 	if len(parts) != 2 {
