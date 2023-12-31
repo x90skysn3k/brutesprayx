@@ -1,6 +1,6 @@
 # BruteSprayX
 
-![Version](https://img.shields.io/badge/Version-2.0-red)[![goreleaser](https://github.com/x90skysn3k/brutesprayx/actions/workflows/release.yml/badge.svg)](https://github.com/x90skysn3k/brutesprayx/actions/workflows/release.yml)
+![Version](https://img.shields.io/badge/Version-2.0.1-red)[![goreleaser](https://github.com/x90skysn3k/brutesprayx/actions/workflows/release.yml/badge.svg)](https://github.com/x90skysn3k/brutesprayx/actions/workflows/release.yml)
 
 Created by: Shane Young/@t1d3nio && Jacob Robles/@shellfail 
 
@@ -9,7 +9,7 @@ Inspired by: Leon Johnson/@sho-luv
 # Description
 BruteSprayx is a golang version of the original BruteSpray. Without needing to rely on other tools this version will be extensible to bruteforce many different services and is way faster than it's Python counterpart. Currently BruteSprayX takes Nmap GNMAP/XML output, newline separated JSON, Nexpose `XML Export` output, Nessus `.nessus` exports, and lists. It will bruteforce supported servics found in those files. This tool is for research purposes and not intended for illegal use. 
 
-<img src="https://i.imgur.com/ZTS5be9.png" width="500">
+<img src="https://imgur.com/HL5jP5W.png" width="500">
 
 # Installation
 
