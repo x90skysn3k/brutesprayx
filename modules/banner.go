@@ -65,7 +65,7 @@ func Banner(banner_flag bool) {
 ██████╔╝ ██║  ██║ ╚██████╔╝    ██║    ███████╗ ███████║ ██║      ██║  ██║ ██║  ██║    ██║    ██╔╝ ██╗
 ╚═════╝  ╚═╝  ╚═╝  ╚═════╝     ╚═╝    ╚══════╝ ╚══════╝ ╚═╝      ╚═╝  ╚═╝ ╚═╝  ╚═╝    ╚═╝    ╚═╝  ╚═╝` + "\n"
 	quiet_banner :=
-		`BrutesprayX v2.0.0
+		`BrutesprayX v2.0.1
 Created by: Shane Young/@t1d3nio && Jacob Robles/@shellfail
 Inspired by: Leon Johnson/@sho-luv`
 	//ascii art by: Cara Pearson
