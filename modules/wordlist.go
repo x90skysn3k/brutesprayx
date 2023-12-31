@@ -2,26 +2,21 @@ package modules
 
 import (
 	"bufio"
-	"context"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 
-	"github.com/google/go-github/v29/github"
 	"github.com/pterm/pterm"
 )
 
-func downloadFileFromGithub(repoOwner, repoName, filePath, localPath string) error {
-	client := github.NewClient(nil)
-	content, _, _, err := client.Repositories.GetContents(context.Background(), repoOwner, repoName, filePath, nil)
+func downloadFileFromGithub(url, localPath string) error {
+	resp, err := http.Get(url)
 	if err != nil {
 		return err
 	}
-
-	data, err := content.GetContent()
-	if err != nil {
-		return err
-	}
+	defer resp.Body.Close()
 
 	file, err := os.Create(localPath)
 	if err != nil {
@@ -29,15 +24,27 @@ func downloadFileFromGithub(repoOwner, repoName, filePath, localPath string) err
 	}
 	defer file.Close()
 
-	bar := pterm.DefaultProgressbar.WithTotal(len(data))
+	bar := pterm.DefaultProgressbar.WithTotal(int(resp.ContentLength))
 	bar.Start()
-	for _, c := range data {
-		_, err := file.WriteString(string(c))
+
+	buf := make([]byte, 4096)
+	for {
+		n, err := resp.Body.Read(buf)
+		if n > 0 {
+			_, err := file.Write(buf[:n])
+			if err != nil {
+				return err
+			}
+			bar.Add(n)
+		}
 		if err != nil {
+			if err == io.EOF {
+				break
+			}
 			return err
 		}
-		bar.Increment()
 	}
+
 	bar.Stop()
 
 	return nil
@@ -81,11 +88,21 @@ func ReadPasswordsFromFile(filename string) ([]string, error) {
 	return passwords, nil
 }
 
-func GetUsersFromDefaultWordlist() []string {
+func GetUsersFromDefaultWordlist(version string) []string {
 	wordlistPath := filepath.Join("wordlist", "user")
+	url := fmt.Sprintf("https://raw.githubusercontent.com/x90skysn3k/brutesprayx/%s/wordlist/user", version)
+
+	wordlistDir := filepath.Dir(wordlistPath)
+	if _, err := os.Stat(wordlistDir); os.IsNotExist(err) {
+		err := os.MkdirAll(wordlistDir, 0755)
+		if err != nil {
+			fmt.Printf("Error creating wordlist directory: %s\n", err)
+			os.Exit(1)
+		}
+	}
 
 	if _, err := os.Stat(wordlistPath); os.IsNotExist(err) {
-		err := downloadFileFromGithub("x90skysn3k", "brutesprayx", "wordlist/user", wordlistPath)
+		err := downloadFileFromGithub(url, wordlistPath)
 		if err != nil {
 			fmt.Printf("Error downloading user wordlist: %s\n", err)
 			os.Exit(1)
@@ -112,11 +129,21 @@ func GetUsersFromDefaultWordlist() []string {
 	return users
 }
 
-func GetPasswordsFromDefaultWordlist() []string {
+func GetPasswordsFromDefaultWordlist(version string) []string {
 	wordlistPath := filepath.Join("wordlist", "password")
+	url := fmt.Sprintf("https://raw.githubusercontent.com/x90skysn3k/brutesprayx/%s/wordlist/password", version)
+
+	wordlistDir := filepath.Dir(wordlistPath)
+	if _, err := os.Stat(wordlistDir); os.IsNotExist(err) {
+		err := os.MkdirAll(wordlistDir, 0755)
+		if err != nil {
+			fmt.Printf("Error creating wordlist directory: %s\n", err)
+			os.Exit(1)
+		}
+	}
 
 	if _, err := os.Stat(wordlistPath); os.IsNotExist(err) {
-		err := downloadFileFromGithub("x90skysn3k", "brutesprayx", "wordlist/password", wordlistPath)
+		err := downloadFileFromGithub(url, wordlistPath)
 		if err != nil {
 			fmt.Printf("Error downloading password wordlist: %s\n", err)
 			os.Exit(1)

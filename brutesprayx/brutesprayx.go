@@ -17,6 +17,8 @@ import (
 	"github.com/x90skysn3k/brutesprayx/parse"
 )
 
+var version = "v2.0.1"
+
 var NAME_MAP = map[string]string{
 	"ms-sql-s":       "mssql",
 	"microsoft-ds":   "smbnt",
@@ -220,7 +222,7 @@ func Execute() {
 
 	flag.Parse()
 
-	modules.Banner(*quiet)
+	modules.Banner(version, *quiet)
 
 	if *host == "" && *file == "" {
 		flag.Usage()
@@ -257,7 +259,7 @@ func Execute() {
 			users = append(users, *user)
 		}
 	} else {
-		users = modules.GetUsersFromDefaultWordlist()
+		users = modules.GetUsersFromDefaultWordlist(version)
 	}
 
 	var passwords []string
@@ -273,7 +275,7 @@ func Execute() {
 			passwords = append(passwords, *password)
 		}
 	} else {
-		passwords = modules.GetPasswordsFromDefaultWordlist()
+		passwords = modules.GetPasswordsFromDefaultWordlist(version)
 	}
 
 	var hostsList []parse.Host

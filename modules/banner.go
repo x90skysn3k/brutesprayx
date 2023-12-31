@@ -32,7 +32,7 @@ func color_banner(text string) string {
 	return fadeInfo
 }
 
-func Banner(banner_flag bool) {
+func Banner(version string, banner_flag bool) {
 
 	banner := `
                               #@                           @/
@@ -65,7 +65,7 @@ func Banner(banner_flag bool) {
 ██████╔╝ ██║  ██║ ╚██████╔╝    ██║    ███████╗ ███████║ ██║      ██║  ██║ ██║  ██║    ██║    ██╔╝ ██╗
 ╚═════╝  ╚═╝  ╚═╝  ╚═════╝     ╚═╝    ╚══════╝ ╚══════╝ ╚═╝      ╚═╝  ╚═╝ ╚═╝  ╚═╝    ╚═╝    ╚═╝  ╚═╝` + "\n"
 	quiet_banner :=
-		`BrutesprayX v2.0.1
+		`BrutesprayX ` + version + `
 Created by: Shane Young/@t1d3nio && Jacob Robles/@shellfail
 Inspired by: Leon Johnson/@sho-luv`
 	//ascii art by: Cara Pearson
