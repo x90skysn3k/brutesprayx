@@ -3,7 +3,6 @@ package modules
 import (
 	"crypto/tls"
 	"fmt"
-	"log"
 	"net"
 	"strings"
 	"time"
@@ -13,7 +12,7 @@ func BruteVMAuthd(host string, port int, user, password string) bool {
 	address := fmt.Sprintf("%s:%d", host, port)
 	conn, err := net.DialTimeout("tcp", address, 5*time.Second)
 	if err != nil {
-		log.Printf("Failed to dial: %v", err)
+		//log.Printf("Failed to dial: %v", err)
 		return false
 	}
 	defer conn.Close()
@@ -22,7 +21,7 @@ func BruteVMAuthd(host string, port int, user, password string) bool {
 	buf := make([]byte, 1024)
 	n, err := conn.Read(buf)
 	if err != nil {
-		log.Printf("Failed to read: %v", err)
+		//log.Printf("Failed to read: %v", err)
 		return false
 	}
 	response := string(buf[:n])
@@ -37,33 +36,33 @@ func BruteVMAuthd(host string, port int, user, password string) bool {
 	cmd := fmt.Sprintf("USER %s\r\n", user)
 	_, err = conn.Write([]byte(cmd))
 	if err != nil {
-		log.Printf("Failed to write: %v", err)
+		//log.Printf("Failed to write: %v", err)
 		return false
 	}
 
 	buf = make([]byte, 1024)
 	n, err = conn.Read(buf)
 	if err != nil {
-		log.Printf("Failed to read: %v", err)
+		//log.Printf("Failed to read: %v", err)
 		return false
 	}
 	response = string(buf[:n])
 	if !strings.HasPrefix(response, "331 ") {
-		log.Printf("Unexpected response: %s", response)
+		//log.Printf("Unexpected response: %s", response)
 		return false
 	}
 
 	cmd = fmt.Sprintf("PASS %s\r\n", password)
 	_, err = conn.Write([]byte(cmd))
 	if err != nil {
-		log.Printf("Failed to write: %v", err)
+		//log.Printf("Failed to write: %v", err)
 		return false
 	}
 
 	buf = make([]byte, 1024)
 	n, err = conn.Read(buf)
 	if err != nil {
-		log.Printf("Failed to read: %v", err)
+		//log.Printf("Failed to read: %v", err)
 		return false
 	}
 	response = string(buf[:n])
@@ -73,7 +72,7 @@ func BruteVMAuthd(host string, port int, user, password string) bool {
 	} else if strings.HasPrefix(response, "530 ") {
 		return false
 	} else {
-		log.Printf("Unexpected response: %s", response)
+		//log.Printf("Unexpected response: %s", response)
 		return false
 	}
 }
