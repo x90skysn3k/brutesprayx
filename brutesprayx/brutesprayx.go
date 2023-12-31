@@ -17,6 +17,8 @@ import (
 	"github.com/x90skysn3k/brutesprayx/parse"
 )
 
+var version = "v2.0.1"
+
 var NAME_MAP = map[string]string{
 	"ms-sql-s":       "mssql",
 	"microsoft-ds":   "smbnt",
@@ -28,6 +30,7 @@ var NAME_MAP = map[string]string{
 	"pop3s":          "pop3",
 	"iss-realsecure": "vmauthd",
 	"snmptrap":       "snmp",
+	"mysql":          "mysql",
 	//"ms-wbt-server":  "rdp",
 }
 
@@ -117,44 +120,6 @@ func parseFile(filename string) (map[parse.Host]int, error) {
 	}
 }
 
-func readUsersFromFile(filename string) ([]string, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	users := []string{}
-	for scanner.Scan() {
-		users = append(users, scanner.Text())
-	}
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
-
-	return users, nil
-}
-
-func readPasswordsFromFile(filename string) ([]string, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	passwords := []string{}
-	for scanner.Scan() {
-		passwords = append(passwords, scanner.Text())
-	}
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
-
-	return passwords, nil
-}
-
 func writeToFile(filename string, content string) error {
 	timestamp := time.Now().Format("2006010215")
 	dir := "output"
@@ -176,25 +141,6 @@ func writeToFile(filename string, content string) error {
 		return err
 	}
 	return nil
-}
-
-func countHosts(fileName string) (int, error) {
-	file, err := os.Open(fileName)
-	if err != nil {
-		return 0, err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	count := 0
-	for scanner.Scan() {
-		count++
-	}
-	if err := scanner.Err(); err != nil {
-		return 0, err
-	}
-
-	return count, nil
 }
 
 func isFile(fileName string) bool {
@@ -229,6 +175,10 @@ func brute(h parse.Host, u string, p string) {
 		result = modules.BrutePOP3(h.Host, h.Port, u, p)
 	case "snmp":
 		result = modules.BrutePOP3(h.Host, h.Port, u, p)
+	case "mysql":
+		result = modules.BruteMYSQL(h.Host, h.Port, u, p)
+	case "vmauthd":
+		result = modules.BruteVMAuthd(h.Host, h.Port, u, p)
 	//case "rdp":
 	//	result = modules.BruteRDP(h.Host, h.Port, u, p)
 	default:
@@ -272,19 +222,22 @@ func Execute() {
 
 	flag.Parse()
 
-	modules.Banner(*quiet)
+	modules.Banner(version, *quiet)
 
-	if *user == "" || *password == "" {
+	if *host == "" && *file == "" {
 		flag.Usage()
 		os.Exit(1)
 	}
 
-	supportedServices := []string{}
-	if *serviceType != "all" {
-		supportedServices = strings.Split(*serviceType, ",")
-		for i := range supportedServices {
-			supportedServices[i] = strings.TrimSpace(supportedServices[i])
+	getSupportedServices := func(serviceType string) []string {
+		if serviceType != "all" {
+			supportedServices := strings.Split(serviceType, ",")
+			for i := range supportedServices {
+				supportedServices[i] = strings.TrimSpace(supportedServices[i])
+			}
+			return supportedServices
 		}
+		return nil
 	}
 
 	hosts, err := parseFile(*file)
@@ -294,27 +247,35 @@ func Execute() {
 	}
 
 	var users []string
-	if isFile(*user) {
-		var err error
-		users, err = readUsersFromFile(*user)
-		if err != nil {
-			fmt.Println("Error reading user file:", err)
-			os.Exit(1)
+	if *user != "" {
+		if isFile(*user) {
+			var err error
+			users, err = modules.ReadUsersFromFile(*user)
+			if err != nil {
+				fmt.Println("Error reading user file:", err)
+				os.Exit(1)
+			}
+		} else {
+			users = append(users, *user)
 		}
 	} else {
-		users = append(users, *user)
+		users = modules.GetUsersFromDefaultWordlist(version)
 	}
 
 	var passwords []string
-	if isFile(*password) {
-		var err error
-		passwords, err = readPasswordsFromFile(*password)
-		if err != nil {
-			fmt.Println("Error reading password file:", err)
-			os.Exit(1)
+	if *password != "" {
+		if isFile(*password) {
+			var err error
+			passwords, err = modules.ReadPasswordsFromFile(*password)
+			if err != nil {
+				fmt.Println("Error reading password file:", err)
+				os.Exit(1)
+			}
+		} else {
+			passwords = append(passwords, *password)
 		}
 	} else {
-		passwords = append(passwords, *password)
+		passwords = modules.GetPasswordsFromDefaultWordlist(version)
 	}
 
 	var hostsList []parse.Host
@@ -331,7 +292,7 @@ func Execute() {
 		hostsList = append(hostsList, hostObj)
 	}
 
-	bar, _ := pterm.DefaultProgressbar.WithTotal(len(hostsList) * len(users) * len(passwords)).WithTitle("Bruteforcing...").Start()
+	bar, _ := pterm.DefaultProgressbar.WithTotal(len(hostsList) * len(users) * len(passwords)).WithTitle("Bruteforcing...").WithMaxWidth(50).Start()
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, *threads)
 	sigs := make(chan os.Signal, 1)
@@ -365,7 +326,7 @@ func Execute() {
 							bar.Increment()
 						}()
 						service := mapService(h.Service)
-						if *serviceType != "all" && !contains(supportedServices, service) {
+						if *serviceType != "all" && !contains(getSupportedServices(*serviceType), service) {
 							return
 						}
 						bruteDone := make(chan bool)
@@ -389,7 +350,7 @@ func Execute() {
 		sem <- struct{}{}
 	}
 	bar.Stop()
-	if len(supportedServices) > 0 {
-		pterm.DefaultSection.Println("Supported services:", strings.Join(supportedServices, ", "))
+	if len(getSupportedServices(*serviceType)) > 0 {
+		pterm.DefaultSection.Println("Supported services:", strings.Join(getSupportedServices(*serviceType), ", "))
 	}
 }
