@@ -18,8 +18,7 @@ func downloadFileFromGithub(url, localPath string) error {
 	}
 	defer resp.Body.Close()
 
-	downloadBar, _ := pterm.DefaultProgressbar.WithTotal(int(resp.ContentLength)).WithTitle("Downloading wordlist...").WithMaxWidth(50).Start()
-	defer downloadBar.Stop()
+	spinner, _ := pterm.DefaultSpinner.Start("Downloading wordlist...")
 
 	file, err := os.Create(localPath)
 	if err != nil {
@@ -28,6 +27,7 @@ func downloadFileFromGithub(url, localPath string) error {
 	defer file.Close()
 
 	buf := make([]byte, 4096)
+	var downloaded int
 	for {
 		n, err := resp.Body.Read(buf)
 		if n > 0 {
@@ -35,7 +35,7 @@ func downloadFileFromGithub(url, localPath string) error {
 			if err != nil {
 				return err
 			}
-			downloadBar.Add(n)
+			downloaded += n
 		}
 		if err != nil {
 			if err == io.EOF {
@@ -44,6 +44,8 @@ func downloadFileFromGithub(url, localPath string) error {
 			return err
 		}
 	}
+
+	spinner.Success()
 
 	return nil
 }
