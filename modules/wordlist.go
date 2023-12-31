@@ -18,7 +18,7 @@ func downloadFileFromGithub(url, localPath string) error {
 	}
 	defer resp.Body.Close()
 
-	downloadBar, _ := pterm.DefaultProgressbar.WithTotal(int(resp.ContentLength)).WithTitle("Downloading wordlist...").Start()
+	downloadBar, _ := pterm.DefaultProgressbar.WithTotal(int(resp.ContentLength)).WithTitle("Downloading wordlist...").WithMaxWidth(50).Start()
 	defer downloadBar.Stop()
 
 	file, err := os.Create(localPath)
