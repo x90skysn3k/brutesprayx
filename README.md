@@ -70,19 +70,18 @@ Command: ```brutesprayx -H ssh://127.0.0.1:22 -u userlist -p passlist```
 * smbnt
 * smtp
 * snmp
+* mysql
+* vmauthd
 
 # Services in Progress
 
 * rdp
-* mysql
-* vmauthd
 * and more
 
 # Data Specs
 ```json
 {"host":"127.0.0.1","port":"3306","service":"mysql"}
 {"host":"127.0.0.10","port":"3306","service":"mysql"}
-...
 ```
 If using Nexpose, export the template `XML Export`. 
 
