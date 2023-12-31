@@ -118,44 +118,6 @@ func parseFile(filename string) (map[parse.Host]int, error) {
 	}
 }
 
-func readUsersFromFile(filename string) ([]string, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	users := []string{}
-	for scanner.Scan() {
-		users = append(users, scanner.Text())
-	}
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
-
-	return users, nil
-}
-
-func readPasswordsFromFile(filename string) ([]string, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	passwords := []string{}
-	for scanner.Scan() {
-		passwords = append(passwords, scanner.Text())
-	}
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
-
-	return passwords, nil
-}
-
 func writeToFile(filename string, content string) error {
 	timestamp := time.Now().Format("2006010215")
 	dir := "output"
@@ -283,27 +245,35 @@ func Execute() {
 	}
 
 	var users []string
-	if isFile(*user) {
-		var err error
-		users, err = readUsersFromFile(*user)
-		if err != nil {
-			fmt.Println("Error reading user file:", err)
-			os.Exit(1)
+	if *user != "" {
+		if isFile(*user) {
+			var err error
+			users, err = modules.ReadUsersFromFile(*user)
+			if err != nil {
+				fmt.Println("Error reading user file:", err)
+				os.Exit(1)
+			}
+		} else {
+			users = append(users, *user)
 		}
 	} else {
-		users = append(users, *user)
+		users = modules.GetUsersFromDefaultWordlist()
 	}
 
 	var passwords []string
-	if isFile(*password) {
-		var err error
-		passwords, err = readPasswordsFromFile(*password)
-		if err != nil {
-			fmt.Println("Error reading password file:", err)
-			os.Exit(1)
+	if *password != "" {
+		if isFile(*password) {
+			var err error
+			passwords, err = modules.ReadPasswordsFromFile(*password)
+			if err != nil {
+				fmt.Println("Error reading password file:", err)
+				os.Exit(1)
+			}
+		} else {
+			passwords = append(passwords, *password)
 		}
 	} else {
-		passwords = append(passwords, *password)
+		passwords = modules.GetPasswordsFromDefaultWordlist()
 	}
 
 	var hostsList []parse.Host
