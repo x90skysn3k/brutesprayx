@@ -1,4 +1,4 @@
-package modules
+package brute
 
 import (
 	"context"
