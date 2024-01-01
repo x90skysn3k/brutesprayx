@@ -16,6 +16,8 @@ import (
 	"github.com/x90skysn3k/brutesprayx/modules"
 )
 
+var masterServiceList = []string{"ssh", "ftp", "smtp", "mssql", "telnet", "smbnt", "postgres", "imap", "pop3", "snmp", "mysql", "vmauthd", "asterisk", "vnc"}
+
 var version = "v2.1.0"
 
 func Execute() {
@@ -46,7 +48,7 @@ func Execute() {
 			}
 			return supportedServices
 		}
-		return []string{"ssh", "ftp", "smtp", "mssql", "telnet", "smbnt", "postgres", "imap", "pop3", "snmp", "mysql", "vmauthd", "asterisk", "vnc"}
+		return masterServiceList
 	}
 
 	if *listServices {
@@ -106,7 +108,17 @@ func Execute() {
 		}
 		hostsList = append(hostsList, host...)
 	}
-	bar, _ := pterm.DefaultProgressbar.WithTotal(len(hostsList) * len(users) * len(passwords)).WithTitle("Bruteforcing...").Start()
+
+	supportedServices := getSupportedServices(*serviceType)
+
+	var vncServices int
+	for _, service := range supportedServices {
+		if service == "vnc" {
+			vncServices++
+		}
+	}
+
+	bar, _ := pterm.DefaultProgressbar.WithTotal(len(hostsList)*len(users)*len(passwords) - vncServices*len(users)).WithTitle("Bruteforcing...").Start()
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, *threads)
 	sigs := make(chan os.Signal, 1)
@@ -121,7 +133,6 @@ func Execute() {
 		os.Exit(0)
 	}()
 
-	supportedServices := getSupportedServices(*serviceType)
 	for _, service := range supportedServices {
 		wg.Add(1)
 		sem <- struct{}{}
