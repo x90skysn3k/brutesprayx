@@ -371,11 +371,20 @@ func (h *Host) Parse(host string) ([]Host, error) {
 func generateHostList(ipnet *net.IPNet) []net.IP {
 	var ips []net.IP
 	for ip := ipnet.IP.Mask(ipnet.Mask); ipnet.Contains(ip); inc(ip) {
-		if !ip.IsLoopback() && !ip.IsLinkLocalUnicast() && !ip.IsLinkLocalMulticast() {
+		if !ip.IsLoopback() && !ip.IsLinkLocalUnicast() && !ip.IsLinkLocalMulticast() && !isBroadcast(ip, ipnet.Mask) {
 			ips = append(ips, append([]byte(nil), ip...))
 		}
 	}
 	return ips
+}
+
+func isBroadcast(ip net.IP, mask net.IPMask) bool {
+	for i := 0; i < len(ip); i++ {
+		if ip[i] != mask[i]|^ip[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func inc(ip net.IP) {
