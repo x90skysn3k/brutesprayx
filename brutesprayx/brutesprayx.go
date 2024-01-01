@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"github.com/pterm/pterm"
-	"github.com/x90skysn3k/brutesprayx/modules/banner"
-	"github.com/x90skysn3k/brutesprayx/modules/brute"
-	"github.com/x90skysn3k/brutesprayx/modules/wordlist"
+	"github.com/x90skysn3k/brutesprayx/banner"
+	"github.com/x90skysn3k/brutesprayx/brute"
+	"github.com/x90skysn3k/brutesprayx/modules"
 	"github.com/x90skysn3k/brutesprayx/parse"
 )
 
@@ -181,7 +181,7 @@ func Execute() {
 	if *user != "" {
 		if isFile(*user) {
 			var err error
-			users, err = wordlist.ReadUsersFromFile(*user)
+			users, err = modules.ReadUsersFromFile(*user)
 			if err != nil {
 				fmt.Println("Error reading user file:", err)
 				os.Exit(1)
@@ -190,14 +190,14 @@ func Execute() {
 			users = append(users, *user)
 		}
 	} else {
-		users = wordlist.GetUsersFromDefaultWordlist(version)
+		users = modules.GetUsersFromDefaultWordlist(version)
 	}
 
 	var passwords []string
 	if *password != "" {
 		if isFile(*password) {
 			var err error
-			passwords, err = wordlist.ReadPasswordsFromFile(*password)
+			passwords, err = modules.ReadPasswordsFromFile(*password)
 			if err != nil {
 				fmt.Println("Error reading password file:", err)
 				os.Exit(1)
@@ -206,7 +206,7 @@ func Execute() {
 			passwords = append(passwords, *password)
 		}
 	} else {
-		passwords = wordlist.GetPasswordsFromDefaultWordlist(version)
+		passwords = modules.GetPasswordsFromDefaultWordlist(version)
 	}
 
 	var hostsList []parse.Host
