@@ -12,7 +12,7 @@ require (
 	github.com/jlaffaye/ftp v0.2.0
 	github.com/knadh/go-pop3 v0.3.0
 	github.com/lib/pq v1.10.9
-	github.com/pterm/pterm v0.12.72
+	github.com/pterm/pterm v0.12.73
 	golang.org/x/crypto v0.17.0
 )
 

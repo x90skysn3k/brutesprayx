@@ -12,7 +12,9 @@ import (
 	"time"
 
 	"github.com/pterm/pterm"
-	"github.com/x90skysn3k/brutesprayx/modules"
+	"github.com/x90skysn3k/brutesprayx/modules/banner"
+	"github.com/x90skysn3k/brutesprayx/modules/brute"
+	"github.com/x90skysn3k/brutesprayx/modules/wordlist"
 	"github.com/x90skysn3k/brutesprayx/parse"
 )
 
@@ -79,37 +81,37 @@ func isFile(fileName string) bool {
 	return false
 }
 
-func brute(h parse.Host, u string, p string) {
+func runbrute(h parse.Host, u string, p string) {
 	service := mapService(h.Service)
 	var result bool
 
 	switch service {
 	case "ssh":
-		result = modules.BruteSSH(h.Host, h.Port, u, p)
+		result = brute.BruteSSH(h.Host, h.Port, u, p)
 	case "ftp":
-		result = modules.BruteFTP(h.Host, h.Port, u, p)
+		result = brute.BruteFTP(h.Host, h.Port, u, p)
 	case "mssql":
-		result = modules.BruteMSSQL(h.Host, h.Port, u, p)
+		result = brute.BruteMSSQL(h.Host, h.Port, u, p)
 	case "telnet":
-		result = modules.BruteTelnet(h.Host, h.Port, u, p)
+		result = brute.BruteTelnet(h.Host, h.Port, u, p)
 	case "smbnt":
-		result = modules.BruteSMB(h.Host, h.Port, u, p)
+		result = brute.BruteSMB(h.Host, h.Port, u, p)
 	case "postgres":
-		result = modules.BrutePostgres(h.Host, h.Port, u, p)
+		result = brute.BrutePostgres(h.Host, h.Port, u, p)
 	case "smtp":
-		result = modules.BruteSMTP(h.Host, h.Port, u, p)
+		result = brute.BruteSMTP(h.Host, h.Port, u, p)
 	case "imap":
-		result = modules.BruteIMAP(h.Host, h.Port, u, p)
+		result = brute.BruteIMAP(h.Host, h.Port, u, p)
 	case "pop3":
-		result = modules.BrutePOP3(h.Host, h.Port, u, p)
+		result = brute.BrutePOP3(h.Host, h.Port, u, p)
 	case "snmp":
-		result = modules.BrutePOP3(h.Host, h.Port, u, p)
+		result = brute.BrutePOP3(h.Host, h.Port, u, p)
 	case "mysql":
-		result = modules.BruteMYSQL(h.Host, h.Port, u, p)
+		result = brute.BruteMYSQL(h.Host, h.Port, u, p)
 	case "vmauthd":
-		result = modules.BruteVMAuthd(h.Host, h.Port, u, p)
+		result = brute.BruteVMAuthd(h.Host, h.Port, u, p)
 	//case "rdp":
-	//	result = modules.BruteRDP(h.Host, h.Port, u, p)
+	//	result = brute.BruteRDP(h.Host, h.Port, u, p)
 	default:
 		//fmt.Printf("Unsupported service: %s\n", h.Service)
 		return
@@ -151,7 +153,7 @@ func Execute() {
 
 	flag.Parse()
 
-	modules.Banner(version, *quiet)
+	banner.Banner(version, *quiet)
 
 	if *host == "" && *file == "" {
 		flag.Usage()
@@ -179,7 +181,7 @@ func Execute() {
 	if *user != "" {
 		if isFile(*user) {
 			var err error
-			users, err = modules.ReadUsersFromFile(*user)
+			users, err = wordlist.ReadUsersFromFile(*user)
 			if err != nil {
 				fmt.Println("Error reading user file:", err)
 				os.Exit(1)
@@ -188,14 +190,14 @@ func Execute() {
 			users = append(users, *user)
 		}
 	} else {
-		users = modules.GetUsersFromDefaultWordlist(version)
+		users = wordlist.GetUsersFromDefaultWordlist(version)
 	}
 
 	var passwords []string
 	if *password != "" {
 		if isFile(*password) {
 			var err error
-			passwords, err = modules.ReadPasswordsFromFile(*password)
+			passwords, err = wordlist.ReadPasswordsFromFile(*password)
 			if err != nil {
 				fmt.Println("Error reading password file:", err)
 				os.Exit(1)
@@ -204,7 +206,7 @@ func Execute() {
 			passwords = append(passwords, *password)
 		}
 	} else {
-		passwords = modules.GetPasswordsFromDefaultWordlist(version)
+		passwords = wordlist.GetPasswordsFromDefaultWordlist(version)
 	}
 
 	var hostsList []parse.Host
@@ -260,7 +262,7 @@ func Execute() {
 						}
 						bruteDone := make(chan bool)
 						go func() {
-							brute(h, u, p)
+							runbrute(h, u, p)
 							bruteDone <- true
 						}()
 
