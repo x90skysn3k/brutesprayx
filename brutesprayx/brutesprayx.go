@@ -93,11 +93,12 @@ func Execute() {
 
 	if *host != "" {
 		var hostObj modules.Host
-		if err := hostObj.Parse(*host); err != nil {
+		host, err := hostObj.Parse(*host)
+		if err != nil {
 			fmt.Println("Error parsing host:", err)
 			os.Exit(1)
 		}
-		hostsList = append(hostsList, hostObj)
+		hostsList = append(hostsList, host...)
 	}
 
 	bar, _ := pterm.DefaultProgressbar.WithTotal(len(hostsList) * len(users) * len(passwords)).WithTitle("Bruteforcing...").Start()
@@ -114,7 +115,6 @@ func Execute() {
 		bar.Stop()
 		os.Exit(0)
 	}()
-
 	for _, h := range hostsList {
 		wg.Add(1)
 		sem <- struct{}{}

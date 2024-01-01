@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"net"
 	"os"
 	"regexp"
 	"strconv"
@@ -15,7 +16,6 @@ type Host struct {
 	Service string
 	Host    string
 	Port    int
-	CIDR    string
 }
 
 type NexposeNode struct {
@@ -314,20 +314,21 @@ func ParseList(filename string) (map[Host]int, error) {
 
 	return hosts, nil
 }
-func (h *Host) Parse(host string) error {
+
+func (h *Host) Parse(host string) ([]Host, error) {
 	supportedServices := []string{"ssh", "ftp", "smtp", "mssql", "telnet", "smbnt", "postgres", "imap", "pop3", "snmp", "mysql", "vmauthd"}
 
 	parts := strings.Split(host, "://")
 	if len(parts) != 2 {
-		return fmt.Errorf("invalid host format: %s", host)
+		return nil, fmt.Errorf("invalid host format: %s", host)
 	}
 
-	h.Service = parts[0]
+	service := parts[0]
 	remaining := parts[1]
 
 	portIndex := strings.LastIndex(remaining, ":")
 	if portIndex == -1 {
-		return fmt.Errorf("invalid host format: %s", host)
+		return nil, fmt.Errorf("invalid host format: %s", host)
 	}
 
 	portStr := remaining[portIndex+1:]
@@ -335,22 +336,53 @@ func (h *Host) Parse(host string) error {
 
 	port, err := strconv.Atoi(portStr)
 	if err != nil {
-		return fmt.Errorf("invalid port in host: %s", host)
+		return nil, fmt.Errorf("invalid port in host: %s", host)
 	}
+
 	var found bool
-	for _, service := range supportedServices {
-		if h.Service == service {
+	for _, services := range supportedServices {
+		if service == services {
 			found = true
 			break
 		}
 	}
 
 	if !found {
-		return fmt.Errorf("unsupported service: %s", h.Service)
+		return nil, fmt.Errorf("unsupported service: %s", service)
 	}
 
-	h.Port = port
-	h.Host = remaining
+	var hosts []Host
+	if strings.Contains(remaining, "/") {
+		_, ipnet, err := net.ParseCIDR(remaining)
+		if err != nil {
+			return nil, fmt.Errorf("invalid CIDR in host: %s", host)
+		}
 
-	return nil
+		for _, host := range generateHostList(ipnet) {
+			hosts = append(hosts, Host{Service: service, Host: host.String(), Port: port})
+		}
+	} else {
+		hosts = append(hosts, Host{Service: service, Host: remaining, Port: port})
+	}
+
+	return hosts, nil
+}
+
+func generateHostList(ipnet *net.IPNet) []net.IP {
+	var ips []net.IP
+	for ip := ipnet.IP.Mask(ipnet.Mask); ipnet.Contains(ip); inc(ip) {
+		if !ip.IsLoopback() && !ip.IsLinkLocalUnicast() && !ip.IsLinkLocalMulticast() {
+			ips = append(ips, append([]byte(nil), ip...))
+		}
+	}
+	return ips
+}
+
+func inc(ip net.IP) {
+	for j := len(ip) - 1; j >= 0; j-- {
+		ip[j]++
+		if ip[j] > 0 {
+			break
+		}
+	}
 }
