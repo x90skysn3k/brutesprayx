@@ -1,7 +1,6 @@
 package brutesprayx
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
 	"os"
@@ -48,76 +47,6 @@ func contains(s []string, e string) bool {
 		}
 	}
 	return false
-}
-
-func parseFile(filename string) (map[parse.Host]int, error) {
-	in_format := ""
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	if !scanner.Scan() {
-		return nil, scanner.Err()
-	}
-	line := scanner.Text()
-
-	if line[0] == '{' {
-		in_format = "json"
-	} else if strings.HasPrefix(line, "# Nmap") {
-		if !scanner.Scan() {
-			return nil, scanner.Err()
-		}
-		line = scanner.Text()
-		if !strings.HasPrefix(line[1:], "Nmap") {
-			in_format = "gnmap"
-		}
-	} else if strings.HasPrefix(line, "<NexposeReport ") {
-		in_format = "xml_nexpose"
-	} else if strings.Contains(line, "<?xml ") {
-		if !scanner.Scan() {
-			return nil, scanner.Err()
-		}
-		line = scanner.Text()
-		if strings.Contains(line, "nmaprun") {
-			in_format = "xml"
-
-		} else if strings.HasPrefix(line, "<NessusClientData") {
-			in_format = "xml_nessus"
-		}
-	} else {
-		in_format = "list"
-	}
-
-	if in_format == "" {
-		fmt.Println("File is not correct format!")
-		os.Exit(0)
-	}
-
-	switch in_format {
-	case "gnmap":
-		hosts, err := parse.ParseGNMAP(filename)
-		return hosts, err
-	case "json":
-		hosts, err := parse.ParseJSON(filename)
-		return hosts, err
-	case "xml":
-		hosts, err := parse.ParseXML(filename)
-		return hosts, err
-	case "xml_nexpose":
-		hosts, err := parse.ParseNexpose(filename)
-		return hosts, err
-	case "xml_nessus":
-		hosts, err := parse.ParseNessus(filename)
-		return hosts, err
-	case "list":
-		hosts, err := parse.ParseList(filename)
-		return hosts, err
-	default:
-		return nil, fmt.Errorf("unsupported file type: %s", in_format)
-	}
 }
 
 func writeToFile(filename string, content string) error {
@@ -240,7 +169,7 @@ func Execute() {
 		return nil
 	}
 
-	hosts, err := parseFile(*file)
+	hosts, err := parse.ParseFile(*file)
 	if err != nil && *file != "" {
 		fmt.Println("Error parsing file:", err)
 		os.Exit(1)
