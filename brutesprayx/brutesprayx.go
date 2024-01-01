@@ -106,7 +106,6 @@ func Execute() {
 		}
 		hostsList = append(hostsList, host...)
 	}
-
 	bar, _ := pterm.DefaultProgressbar.WithTotal(len(hostsList) * len(users) * len(passwords)).WithTitle("Bruteforcing...").Start()
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, *threads)
@@ -131,9 +130,10 @@ func Execute() {
 				<-sem
 				wg.Done()
 			}()
-			for _, h := range hostsList {
-				if h.Service == service {
-					for _, u := range users {
+			if service == "vnc" || service == "snmp" {
+				u := ""
+				for _, h := range hostsList {
+					if h.Service == service {
 						for _, p := range passwords {
 							wg.Add(1)
 							sem <- struct{}{}
@@ -155,6 +155,35 @@ func Execute() {
 									pterm.Color(pterm.FgRed).Println("Bruteforce timeout:", h.Service, "on host", h.Host, "port", h.Port, "with username", u, "and password", p)
 								}
 							}(h, u, p)
+						}
+					}
+				}
+			} else {
+				for _, h := range hostsList {
+					if h.Service == service {
+						for _, u := range users {
+							for _, p := range passwords {
+								wg.Add(1)
+								sem <- struct{}{}
+								go func(h modules.Host, u string, p string) {
+									defer func() {
+										<-sem
+										wg.Done()
+										bar.Increment()
+									}()
+									bruteDone := make(chan bool)
+									go func() {
+										brute.RunBrute(h, u, p)
+										bruteDone <- true
+									}()
+
+									select {
+									case <-bruteDone:
+									case <-time.After(time.Duration(*timeout) * time.Second):
+										pterm.Color(pterm.FgRed).Println("Bruteforce timeout:", h.Service, "on host", h.Host, "port", h.Port, "with username", u, "and password", p)
+									}
+								}(h, u, p)
+							}
 						}
 					}
 				}
