@@ -15,6 +15,7 @@ type Host struct {
 	Service string
 	Host    string
 	Port    int
+	CIDR    string
 }
 
 type NexposeNode struct {

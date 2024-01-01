@@ -100,7 +100,7 @@ func Execute() {
 		hostsList = append(hostsList, hostObj)
 	}
 
-	bar, _ := pterm.DefaultProgressbar.WithTotal(len(hostsList) * len(users) * len(passwords)).WithTitle("Bruteforcing...").WithMaxWidth(50).Start()
+	bar, _ := pterm.DefaultProgressbar.WithTotal(len(hostsList) * len(users) * len(passwords)).WithTitle("Bruteforcing...").Start()
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, *threads)
 	sigs := make(chan os.Signal, 1)
