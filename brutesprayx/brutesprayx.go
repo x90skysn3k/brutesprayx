@@ -23,6 +23,7 @@ func Execute() {
 	password := flag.String("p", "", "Password or password file to use for brute force")
 	threads := flag.Int("t", 10, "Number of threads to use")
 	serviceType := flag.String("s", "all", "Default all, Service type: ssh, ftp, smtp, etc")
+	listServices := flag.Bool("S", false, "List all supported services")
 	file := flag.String("f", "", "File to parse")
 	host := flag.String("H", "", "Target in the format service://host:port")
 	quiet := flag.Bool("q", false, "Supress the banner")
@@ -45,7 +46,12 @@ func Execute() {
 			}
 			return supportedServices
 		}
-		return nil
+		return []string{"ssh", "ftp", "smtp", "mssql", "telnet", "smbnt", "postgres", "imap", "pop3", "snmp", "mysql", "vmauthd", "asterisk", "vnc"}
+	}
+
+	if *listServices {
+		pterm.DefaultSection.Println("Supported services:", strings.Join(getSupportedServices(*serviceType), ", "))
+		os.Exit(1)
 	}
 
 	hosts, err := modules.ParseFile(*file)
@@ -115,50 +121,49 @@ func Execute() {
 		bar.Stop()
 		os.Exit(0)
 	}()
-	for _, h := range hostsList {
+
+	supportedServices := getSupportedServices(*serviceType)
+	for _, service := range supportedServices {
 		wg.Add(1)
 		sem <- struct{}{}
-		go func(h modules.Host) {
+		go func(service string) {
 			defer func() {
 				<-sem
 				wg.Done()
 			}()
-			for _, u := range users {
-				for _, p := range passwords {
-					wg.Add(1)
-					sem <- struct{}{}
-					go func(h modules.Host, u string, p string) {
-						defer func() {
-							<-sem
-							wg.Done()
-							bar.Increment()
-						}()
-						service := brute.MapService(h.Service)
-						if *serviceType != "all" && !modules.Contains(getSupportedServices(*serviceType), service) {
-							return
-						}
-						bruteDone := make(chan bool)
-						go func() {
-							brute.RunBrute(h, u, p)
-							bruteDone <- true
-						}()
+			for _, h := range hostsList {
+				if h.Service == service {
+					for _, u := range users {
+						for _, p := range passwords {
+							wg.Add(1)
+							sem <- struct{}{}
+							go func(h modules.Host, u string, p string) {
+								defer func() {
+									<-sem
+									wg.Done()
+									bar.Increment()
+								}()
+								bruteDone := make(chan bool)
+								go func() {
+									brute.RunBrute(h, u, p)
+									bruteDone <- true
+								}()
 
-						select {
-						case <-bruteDone:
-						case <-time.After(time.Duration(*timeout) * time.Second):
-							pterm.Color(pterm.FgRed).Println("Bruteforce timeout:", h.Service, "on host", h.Host, "port", h.Port, "with username", u, "and password", p)
+								select {
+								case <-bruteDone:
+								case <-time.After(time.Duration(*timeout) * time.Second):
+									pterm.Color(pterm.FgRed).Println("Bruteforce timeout:", h.Service, "on host", h.Host, "port", h.Port, "with username", u, "and password", p)
+								}
+							}(h, u, p)
 						}
-					}(h, u, p)
+					}
 				}
 			}
-		}(h)
+		}(service)
 	}
 	wg.Wait()
 	for i := 0; i < cap(sem); i++ {
 		sem <- struct{}{}
 	}
 	bar.Stop()
-	if len(getSupportedServices(*serviceType)) > 0 {
-		pterm.DefaultSection.Println("Supported services:", strings.Join(getSupportedServices(*serviceType), ", "))
-	}
 }
