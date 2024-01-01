@@ -4,8 +4,25 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
+
+func Contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
+
+func IsFile(fileName string) bool {
+	if _, err := os.Stat(fileName); err == nil && filepath.Ext(fileName) == "" {
+		return true
+	}
+	return false
+}
 
 func ParseFile(filename string) (map[Host]int, error) {
 	in_format := ""

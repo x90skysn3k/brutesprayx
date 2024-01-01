@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strings"
 	"sync"
 	"syscall"
@@ -18,22 +17,6 @@ import (
 )
 
 var version = "v2.1.0"
-
-func contains(s []string, e string) bool {
-	for _, a := range s {
-		if a == e {
-			return true
-		}
-	}
-	return false
-}
-
-func isFile(fileName string) bool {
-	if _, err := os.Stat(fileName); err == nil && filepath.Ext(fileName) == "" {
-		return true
-	}
-	return false
-}
 
 func Execute() {
 	user := flag.String("u", "", "Username or user list to brute force")
@@ -73,7 +56,7 @@ func Execute() {
 
 	var users []string
 	if *user != "" {
-		if isFile(*user) {
+		if modules.IsFile(*user) {
 			var err error
 			users, err = modules.ReadUsersFromFile(*user)
 			if err != nil {
@@ -89,7 +72,7 @@ func Execute() {
 
 	var passwords []string
 	if *password != "" {
-		if isFile(*password) {
+		if modules.IsFile(*password) {
 			var err error
 			passwords, err = modules.ReadPasswordsFromFile(*password)
 			if err != nil {
@@ -151,7 +134,7 @@ func Execute() {
 							bar.Increment()
 						}()
 						service := brute.MapService(h.Service)
-						if *serviceType != "all" && !contains(getSupportedServices(*serviceType), service) {
+						if *serviceType != "all" && !modules.Contains(getSupportedServices(*serviceType), service) {
 							return
 						}
 						bruteDone := make(chan bool)
