@@ -78,11 +78,12 @@ Command: ```brutesprayx -H ssh://127.0.0.1:22 -u userlist -p passlist```
 * snmp
 * mysql
 * vmauthd
+* vnc
 
 # Services in Progress
 
 * rdp
-* and more
+* asterisk
 
 # Data Specs
 ```json

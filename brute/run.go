@@ -14,6 +14,7 @@ var NAME_MAP = map[string]string{
 	"iss-realsecure": "vmauthd",
 	"snmptrap":       "snmp",
 	"mysql":          "mysql",
+	"vnc":            "vnc",
 	//"ms-wbt-server":  "rdp",
 }
 
@@ -53,6 +54,10 @@ func RunBrute(h modules.Host, u string, p string) {
 		result = BruteMYSQL(h.Host, h.Port, u, p)
 	case "vmauthd":
 		result = BruteVMAuthd(h.Host, h.Port, u, p)
+	case "asterisk":
+		result = BruteAsterisk(h.Host, h.Port, u, p)
+	case "vnc":
+		result = BruteVNC(h.Host, h.Port, u, p)
 	//case "rdp":
 	//	result = brute.BruteRDP(h.Host, h.Port, u, p)
 	default:

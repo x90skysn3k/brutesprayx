@@ -43,12 +43,22 @@ func WriteToFile(filename string, content string) error {
 func PrintResult(service string, host string, port int, user string, pass string, result bool) {
 
 	if result {
-		pterm.Success.Println("Attempt", service, "SUCCESS on host", host, "port", port, "with username", user, "and password", pass, getResultString(result))
-		content := fmt.Sprintf("Attempt %s SUCCESS on host %s port %d with username %s and password %s %s\n", service, host, port, user, pass, getResultString(result))
-		filename := filepath.Base(host)
-		WriteToFile(filename, content)
+		if service == "vnc" {
+			pterm.Success.Println("Attempt", service, "SUCCESS on host", host, "port", port, "with password", pass, getResultString(result))
+			content := fmt.Sprintf("Attempt %s SUCCESS on host %s port %d with password %s %s\n", service, host, port, pass, getResultString(result))
+			filename := filepath.Base(host)
+			WriteToFile(filename, content)
+		} else {
+			pterm.Success.Println("Attempt", service, "SUCCESS on host", host, "port", port, "with username", user, "and password", pass, getResultString(result))
+			content := fmt.Sprintf("Attempt %s SUCCESS on host %s port %d with username %s and password %s %s\n", service, host, port, user, pass, getResultString(result))
+			filename := filepath.Base(host)
+			WriteToFile(filename, content)
+		}
 	}
+	if service == "vnc" {
+		pterm.Color(pterm.FgLightRed).Println("Attempt", service, "on host", host, "port", port, "with password", pass, getResultString(result))
+	} else {
+		pterm.Color(pterm.FgLightRed).Println("Attempt", service, "on host", host, "port", port, "with username", user, "and password", pass, getResultString(result))
 
-	pterm.Color(pterm.FgLightRed).Println("Attempt", service, "on host", host, "port", port, "with username", user, "and password", pass, getResultString(result))
-
+	}
 }
