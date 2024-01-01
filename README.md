@@ -60,6 +60,10 @@ Command: ```brutesprayx -H ssh://127.0.0.1:22 -u userlist -p passlist```
 
 ```brutesprayx -f out.json -u admin -p password -t 5 ```
 
+#### Bruteforce a CIDR range
+
+```brutesprayx -H ssh://10.1.1.0/24:22 -t 1000```
+
 # Supported Services
 
 * ssh
