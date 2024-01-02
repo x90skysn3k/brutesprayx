@@ -35,10 +35,19 @@ func Execute() {
 
 	banner.Banner(version, *quiet)
 
-	supportedServices := getSupportedServices(*serviceType)
+	getSupportedServices := func(serviceType string) []string {
+		if serviceType != "all" {
+			supportedServices := strings.Split(serviceType, ",")
+			for i := range supportedServices {
+				supportedServices[i] = strings.TrimSpace(supportedServices[i])
+			}
+			return supportedServices
+		}
+		return masterServiceList
+	}
 
 	if *listServices {
-		pterm.DefaultSection.Println("Supported services:", strings.Join(supportedServices, ", "))
+		pterm.DefaultSection.Println("Supported services:", strings.Join(getSupportedServices(*serviceType), ", "))
 		os.Exit(1)
 	}
 
@@ -53,17 +62,66 @@ func Execute() {
 		os.Exit(1)
 	}
 
-	users := getUsers(*user)
-	passwords := getPasswords(*password)
-	hostsMap := make(map[modules.Host]struct{})
-	for host := range hosts {
-		hostsMap[host] = struct{}{}
+	var users []string
+	if *user != "" {
+		if modules.IsFile(*user) {
+			var err error
+			users, err = modules.ReadUsersFromFile(*user)
+			if err != nil {
+				fmt.Println("Error reading user file:", err)
+				os.Exit(1)
+			}
+		} else {
+			users = append(users, *user)
+		}
+	} else {
+		users = modules.GetUsersFromDefaultWordlist(version)
 	}
 
-	hostsList := getHosts(hostsMap, *host)
+	var passwords []string
+	if *password != "" {
+		if modules.IsFile(*password) {
+			var err error
+			passwords, err = modules.ReadPasswordsFromFile(*password)
+			if err != nil {
+				fmt.Println("Error reading password file:", err)
+				os.Exit(1)
+			}
+		} else {
+			passwords = append(passwords, *password)
+		}
+	} else {
+		passwords = modules.GetPasswordsFromDefaultWordlist(version)
+	}
 
-	bar := createProgressBar(hostsList, users, passwords, supportedServices)
+	var hostsList []modules.Host
+	for h := range hosts {
+		hostsList = append(hostsList, h)
+	}
 
+	if *host != "" {
+		var hostObj modules.Host
+		host, err := hostObj.Parse(*host)
+		if err != nil {
+			fmt.Println("Error parsing host:", err)
+			os.Exit(1)
+		}
+		hostsList = append(hostsList, host...)
+	}
+
+	supportedServices := getSupportedServices(*serviceType)
+
+	var nopassServices int
+	for _, service := range supportedServices {
+		if service == "vnc" {
+			nopassServices++
+		}
+		if service == "snmp" {
+			nopassServices++
+		}
+	}
+
+	bar, _ := pterm.DefaultProgressbar.WithTotal(len(hostsList)*len(users)*len(passwords) - nopassServices*len(users)).WithTitle("Bruteforcing...").Start()
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, *threads)
 	sigs := make(chan os.Signal, 1)
@@ -86,7 +144,64 @@ func Execute() {
 				<-sem
 				wg.Done()
 			}()
-			bruteforce(hostsList, users, passwords, service, *timeout, bar)
+			if service == "vnc" || service == "snmp" {
+				u := ""
+				for _, h := range hostsList {
+					if h.Service == service {
+						for _, p := range passwords {
+							wg.Add(1)
+							sem <- struct{}{}
+							go func(h modules.Host, u string, p string) {
+								defer func() {
+									<-sem
+									wg.Done()
+									bar.Increment()
+								}()
+								bruteDone := make(chan bool)
+								go func() {
+									brute.RunBrute(h, u, p)
+									bruteDone <- true
+								}()
+
+								select {
+								case <-bruteDone:
+								case <-time.After(time.Duration(*timeout) * time.Second):
+									pterm.Color(pterm.FgRed).Println("Bruteforce timeout:", h.Service, "on host", h.Host, "port", h.Port, "with username", u, "and password", p)
+								}
+							}(h, u, p)
+						}
+					}
+				}
+			} else {
+				for _, h := range hostsList {
+					if h.Service == service {
+						for _, u := range users {
+							for _, p := range passwords {
+								wg.Add(1)
+								sem <- struct{}{}
+								go func(h modules.Host, u string, p string) {
+									defer func() {
+										<-sem
+										wg.Done()
+										bar.Increment()
+									}()
+									bruteDone := make(chan bool)
+									go func() {
+										brute.RunBrute(h, u, p)
+										bruteDone <- true
+									}()
+
+									select {
+									case <-bruteDone:
+									case <-time.After(time.Duration(*timeout) * time.Second):
+										pterm.Color(pterm.FgRed).Println("Bruteforce timeout:", h.Service, "on host", h.Host, "port", h.Port, "with username", u, "and password", p)
+									}
+								}(h, u, p)
+							}
+						}
+					}
+				}
+			}
 		}(service)
 	}
 	wg.Wait()
@@ -94,130 +209,4 @@ func Execute() {
 		sem <- struct{}{}
 	}
 	bar.Stop()
-}
-
-func getSupportedServices(serviceType string) []string {
-	if serviceType != "all" {
-		supportedServices := strings.Split(serviceType, ",")
-		for i := range supportedServices {
-			supportedServices[i] = strings.TrimSpace(supportedServices[i])
-		}
-		return supportedServices
-	}
-	return masterServiceList
-}
-
-func getUsers(user string) []string {
-	var users []string
-	if user != "" {
-		if modules.IsFile(user) {
-			var err error
-			users, err = modules.ReadUsersFromFile(user)
-			if err != nil {
-				fmt.Println("Error reading user file:", err)
-				os.Exit(1)
-			}
-		} else {
-			users = append(users, user)
-		}
-	} else {
-		users = modules.GetUsersFromDefaultWordlist(version)
-	}
-	return users
-}
-
-func getPasswords(password string) []string {
-	var passwords []string
-	if password != "" {
-		if modules.IsFile(password) {
-			var err error
-			passwords, err = modules.ReadPasswordsFromFile(password)
-			if err != nil {
-				fmt.Println("Error reading password file:", err)
-				os.Exit(1)
-			}
-		} else {
-			passwords = append(passwords, password)
-		}
-	} else {
-		passwords = modules.GetPasswordsFromDefaultWordlist(version)
-	}
-	return passwords
-}
-
-func getHosts(hosts map[modules.Host]struct{}, host string) []modules.Host {
-	var hostsList []modules.Host
-	for h := range hosts {
-		hostsList = append(hostsList, h)
-	}
-
-	if host != "" {
-		var hostObj modules.Host
-		host, err := hostObj.Parse(host)
-		if err != nil {
-			fmt.Println("Error parsing host:", err)
-			os.Exit(1)
-		}
-		hostsList = append(hostsList, host...)
-	}
-	return hostsList
-}
-
-func createProgressBar(hostsList []modules.Host, users, passwords []string, supportedServices []string) *pterm.ProgressbarPrinter {
-	var nopassServices int
-	for _, service := range supportedServices {
-		if service == "vnc" {
-			nopassServices++
-		}
-		if service == "snmp" {
-			nopassServices++
-		}
-	}
-
-	bar, _ := pterm.DefaultProgressbar.WithTotal(len(hostsList)*len(users)*len(passwords) - nopassServices*len(users)).WithTitle("Bruteforcing...").Start()
-	return bar
-}
-
-func bruteforce(hostsList []modules.Host, users, passwords []string, service string, timeout int, bar *pterm.ProgressbarPrinter) {
-	if service == "vnc" || service == "snmp" {
-		u := ""
-		for _, h := range hostsList {
-			if h.Service == service {
-				for _, p := range passwords {
-					bruteforceHost(h, u, p, timeout, bar)
-				}
-			}
-		}
-	} else {
-		for _, h := range hostsList {
-			if h.Service == service {
-				for _, u := range users {
-					for _, p := range passwords {
-						bruteforceHost(h, u, p, timeout, bar)
-					}
-				}
-			}
-		}
-	}
-}
-
-func bruteforceHost(h modules.Host, u string, p string, timeout int, bar *pterm.ProgressbarPrinter) {
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		bruteDone := make(chan bool)
-		go func() {
-			brute.RunBrute(h, u, p)
-			bruteDone <- true
-		}()
-
-		select {
-		case <-bruteDone:
-		case <-time.After(time.Duration(timeout) * time.Second):
-			pterm.Color(pterm.FgRed).Println("Bruteforce timeout:", h.Service, "on host", h.Host, "port", h.Port, "with username", u, "and password", p)
-		}
-		bar.Increment()
-	}()
-	wg.Wait()
 }
