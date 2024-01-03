@@ -49,6 +49,12 @@ func Execute() {
 	if *listServices {
 		pterm.DefaultSection.Println("Supported services:", strings.Join(getSupportedServices(*serviceType), ", "))
 		os.Exit(1)
+	} else {
+		if flag.NFlag() == 0 {
+			flag.Usage()
+			pterm.DefaultSection.Println("Supported services:", strings.Join(getSupportedServices(*serviceType), ", "))
+			os.Exit(1)
+		}
 	}
 
 	if *host == "" && *file == "" {

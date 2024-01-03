@@ -55,6 +55,7 @@ func RunBrute(h modules.Host, u string, p string) {
 	case "vmauthd":
 		result = BruteVMAuthd(h.Host, h.Port, u, p)
 	case "asterisk":
+		//warning not tested
 		result = BruteAsterisk(h.Host, h.Port, u, p)
 	case "vnc":
 		result = BruteVNC(h.Host, h.Port, u, p)

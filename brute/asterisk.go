@@ -7,6 +7,7 @@ import (
 	"github.com/wenerme/astgo/ami"
 )
 
+// this is very alpha and I have no idea if it even works
 func BruteAsterisk(host string, port int, user, password string) bool {
 	boot := make(chan *ami.Message, 1)
 
