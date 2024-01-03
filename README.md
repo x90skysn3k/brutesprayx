@@ -1,6 +1,6 @@
 # BruteSprayX
 
-![Version](https://img.shields.io/badge/Version-2.0.1-red)[![goreleaser](https://github.com/x90skysn3k/brutesprayx/actions/workflows/release.yml/badge.svg)](https://github.com/x90skysn3k/brutesprayx/actions/workflows/release.yml)
+![Version](https://img.shields.io/badge/Version-2.1.0-red)[![goreleaser](https://github.com/x90skysn3k/brutesprayx/actions/workflows/release.yml/badge.svg)](https://github.com/x90skysn3k/brutesprayx/actions/workflows/release.yml)
 
 Created by: Shane Young/@t1d3nio && Jacob Robles/@shellfail 
 
@@ -38,6 +38,8 @@ Command: ```brutesprayx -H ssh://127.0.0.1:22 -u userlist -p passlist```
 
 ## Examples
 
+<img src="brutesprayx.gif" width="512">
+
 #### Using Custom Wordlists:
 
 ```brutesprayx -f nmap.gnmap -u /usr/share/wordlist/user.txt -p /usr/share/wordlist/pass.txt -t 5 ```
@@ -58,6 +60,10 @@ Command: ```brutesprayx -H ssh://127.0.0.1:22 -u userlist -p passlist```
 
 ```brutesprayx -f out.json -u admin -p password -t 5 ```
 
+#### Bruteforce a CIDR range
+
+```brutesprayx -H ssh://10.1.1.0/24:22 -t 1000```
+
 # Supported Services
 
 * ssh
@@ -72,11 +78,12 @@ Command: ```brutesprayx -H ssh://127.0.0.1:22 -u userlist -p passlist```
 * snmp
 * mysql
 * vmauthd
+* vnc
 
 # Services in Progress
 
 * rdp
-* and more
+* asterisk
 
 # Data Specs
 ```json

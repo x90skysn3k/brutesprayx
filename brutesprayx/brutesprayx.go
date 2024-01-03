@@ -1,220 +1,31 @@
 package brutesprayx
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strings"
 	"sync"
 	"syscall"
 	"time"
 
 	"github.com/pterm/pterm"
+	"github.com/x90skysn3k/brutesprayx/banner"
+	"github.com/x90skysn3k/brutesprayx/brute"
 	"github.com/x90skysn3k/brutesprayx/modules"
-	"github.com/x90skysn3k/brutesprayx/parse"
 )
 
-var version = "v2.0.1"
+var masterServiceList = []string{"ssh", "ftp", "smtp", "mssql", "telnet", "smbnt", "postgres", "imap", "pop3", "snmp", "mysql", "vmauthd", "asterisk", "vnc"}
 
-var NAME_MAP = map[string]string{
-	"ms-sql-s":       "mssql",
-	"microsoft-ds":   "smbnt",
-	"cifs":           "smbnt",
-	"postgresql":     "postgres",
-	"smtps":          "smtp",
-	"submission":     "smtp",
-	"imaps":          "imap",
-	"pop3s":          "pop3",
-	"iss-realsecure": "vmauthd",
-	"snmptrap":       "snmp",
-	"mysql":          "mysql",
-	//"ms-wbt-server":  "rdp",
-}
-
-func mapService(service string) string {
-	if mappedService, ok := NAME_MAP[service]; ok {
-		return mappedService
-	}
-	return service
-}
-
-func contains(s []string, e string) bool {
-	for _, a := range s {
-		if a == e {
-			return true
-		}
-	}
-	return false
-}
-
-func parseFile(filename string) (map[parse.Host]int, error) {
-	in_format := ""
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	if !scanner.Scan() {
-		return nil, scanner.Err()
-	}
-	line := scanner.Text()
-
-	if line[0] == '{' {
-		in_format = "json"
-	} else if strings.HasPrefix(line, "# Nmap") {
-		if !scanner.Scan() {
-			return nil, scanner.Err()
-		}
-		line = scanner.Text()
-		if !strings.HasPrefix(line[1:], "Nmap") {
-			in_format = "gnmap"
-		}
-	} else if strings.HasPrefix(line, "<NexposeReport ") {
-		in_format = "xml_nexpose"
-	} else if strings.Contains(line, "<?xml ") {
-		if !scanner.Scan() {
-			return nil, scanner.Err()
-		}
-		line = scanner.Text()
-		if strings.Contains(line, "nmaprun") {
-			in_format = "xml"
-
-		} else if strings.HasPrefix(line, "<NessusClientData") {
-			in_format = "xml_nessus"
-		}
-	} else {
-		in_format = "list"
-	}
-
-	if in_format == "" {
-		fmt.Println("File is not correct format!")
-		os.Exit(0)
-	}
-
-	switch in_format {
-	case "gnmap":
-		hosts, err := parse.ParseGNMAP(filename)
-		return hosts, err
-	case "json":
-		hosts, err := parse.ParseJSON(filename)
-		return hosts, err
-	case "xml":
-		hosts, err := parse.ParseXML(filename)
-		return hosts, err
-	case "xml_nexpose":
-		hosts, err := parse.ParseNexpose(filename)
-		return hosts, err
-	case "xml_nessus":
-		hosts, err := parse.ParseNessus(filename)
-		return hosts, err
-	case "list":
-		hosts, err := parse.ParseList(filename)
-		return hosts, err
-	default:
-		return nil, fmt.Errorf("unsupported file type: %s", in_format)
-	}
-}
-
-func writeToFile(filename string, content string) error {
-	timestamp := time.Now().Format("2006010215")
-	dir := "output"
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		err := os.Mkdir(dir, 0755)
-		if err != nil {
-			return err
-		}
-	}
-	filename = filepath.Join(dir, filename+"_"+timestamp)
-	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	_, err = file.WriteString(content)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func isFile(fileName string) bool {
-	if _, err := os.Stat(fileName); err == nil && filepath.Ext(fileName) == "" {
-		return true
-	}
-	return false
-}
-
-func brute(h parse.Host, u string, p string) {
-	service := mapService(h.Service)
-	var result bool
-
-	switch service {
-	case "ssh":
-		result = modules.BruteSSH(h.Host, h.Port, u, p)
-	case "ftp":
-		result = modules.BruteFTP(h.Host, h.Port, u, p)
-	case "mssql":
-		result = modules.BruteMSSQL(h.Host, h.Port, u, p)
-	case "telnet":
-		result = modules.BruteTelnet(h.Host, h.Port, u, p)
-	case "smbnt":
-		result = modules.BruteSMB(h.Host, h.Port, u, p)
-	case "postgres":
-		result = modules.BrutePostgres(h.Host, h.Port, u, p)
-	case "smtp":
-		result = modules.BruteSMTP(h.Host, h.Port, u, p)
-	case "imap":
-		result = modules.BruteIMAP(h.Host, h.Port, u, p)
-	case "pop3":
-		result = modules.BrutePOP3(h.Host, h.Port, u, p)
-	case "snmp":
-		result = modules.BrutePOP3(h.Host, h.Port, u, p)
-	case "mysql":
-		result = modules.BruteMYSQL(h.Host, h.Port, u, p)
-	case "vmauthd":
-		result = modules.BruteVMAuthd(h.Host, h.Port, u, p)
-	//case "rdp":
-	//	result = modules.BruteRDP(h.Host, h.Port, u, p)
-	default:
-		//fmt.Printf("Unsupported service: %s\n", h.Service)
-		return
-	}
-
-	printResult(service, h.Host, h.Port, u, p, result)
-}
-
-func printResult(service string, host string, port int, user string, pass string, result bool) {
-
-	if result {
-		pterm.Success.Println("Attempt", service, "SUCCESS on host", host, "port", port, "with username", user, "and password", pass, getResultString(result))
-		content := fmt.Sprintf("Attempt %s SUCCESS on host %s port %d with username %s and password %s %s\n", service, host, port, user, pass, getResultString(result))
-		filename := filepath.Base(host)
-		writeToFile(filename, content)
-	}
-
-	pterm.Color(pterm.FgLightRed).Println("Attempt", service, "on host", host, "port", port, "with username", user, "and password", pass, getResultString(result))
-
-}
-
-func getResultString(result bool) string {
-	if result {
-		return "succeeded"
-	} else {
-		return "failed"
-	}
-}
+var version = "v2.1.0"
 
 func Execute() {
 	user := flag.String("u", "", "Username or user list to brute force")
 	password := flag.String("p", "", "Password or password file to use for brute force")
 	threads := flag.Int("t", 10, "Number of threads to use")
 	serviceType := flag.String("s", "all", "Default all, Service type: ssh, ftp, smtp, etc")
+	listServices := flag.Bool("S", false, "List all supported services")
 	file := flag.String("f", "", "File to parse")
 	host := flag.String("H", "", "Target in the format service://host:port")
 	quiet := flag.Bool("q", false, "Supress the banner")
@@ -222,12 +33,7 @@ func Execute() {
 
 	flag.Parse()
 
-	modules.Banner(version, *quiet)
-
-	if *host == "" && *file == "" {
-		flag.Usage()
-		os.Exit(1)
-	}
+	banner.Banner(version, *quiet)
 
 	getSupportedServices := func(serviceType string) []string {
 		if serviceType != "all" {
@@ -237,10 +43,26 @@ func Execute() {
 			}
 			return supportedServices
 		}
-		return nil
+		return masterServiceList
 	}
 
-	hosts, err := parseFile(*file)
+	if *listServices {
+		pterm.DefaultSection.Println("Supported services:", strings.Join(getSupportedServices(*serviceType), ", "))
+		os.Exit(1)
+	} else {
+		if flag.NFlag() == 0 {
+			flag.Usage()
+			pterm.DefaultSection.Println("Supported services:", strings.Join(getSupportedServices(*serviceType), ", "))
+			os.Exit(1)
+		}
+	}
+
+	if *host == "" && *file == "" {
+		flag.Usage()
+		os.Exit(1)
+	}
+
+	hosts, err := modules.ParseFile(*file)
 	if err != nil && *file != "" {
 		fmt.Println("Error parsing file:", err)
 		os.Exit(1)
@@ -248,7 +70,7 @@ func Execute() {
 
 	var users []string
 	if *user != "" {
-		if isFile(*user) {
+		if modules.IsFile(*user) {
 			var err error
 			users, err = modules.ReadUsersFromFile(*user)
 			if err != nil {
@@ -264,7 +86,7 @@ func Execute() {
 
 	var passwords []string
 	if *password != "" {
-		if isFile(*password) {
+		if modules.IsFile(*password) {
 			var err error
 			passwords, err = modules.ReadPasswordsFromFile(*password)
 			if err != nil {
@@ -278,21 +100,34 @@ func Execute() {
 		passwords = modules.GetPasswordsFromDefaultWordlist(version)
 	}
 
-	var hostsList []parse.Host
+	var hostsList []modules.Host
 	for h := range hosts {
 		hostsList = append(hostsList, h)
 	}
 
 	if *host != "" {
-		var hostObj parse.Host
-		if err := hostObj.Parse(*host); err != nil {
+		var hostObj modules.Host
+		host, err := hostObj.Parse(*host)
+		if err != nil {
 			fmt.Println("Error parsing host:", err)
 			os.Exit(1)
 		}
-		hostsList = append(hostsList, hostObj)
+		hostsList = append(hostsList, host...)
 	}
 
-	bar, _ := pterm.DefaultProgressbar.WithTotal(len(hostsList) * len(users) * len(passwords)).WithTitle("Bruteforcing...").WithMaxWidth(50).Start()
+	supportedServices := getSupportedServices(*serviceType)
+
+	var nopassServices int
+	for _, service := range supportedServices {
+		if service == "vnc" {
+			nopassServices++
+		}
+		if service == "snmp" {
+			nopassServices++
+		}
+	}
+
+	bar, _ := pterm.DefaultProgressbar.WithTotal(len(hostsList)*len(users)*len(passwords) - nopassServices*len(users)).WithTitle("Bruteforcing...").Start()
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, *threads)
 	sigs := make(chan os.Signal, 1)
@@ -307,50 +142,77 @@ func Execute() {
 		os.Exit(0)
 	}()
 
-	for _, h := range hostsList {
+	for _, service := range supportedServices {
 		wg.Add(1)
 		sem <- struct{}{}
-		go func(h parse.Host) {
+		go func(service string) {
 			defer func() {
 				<-sem
 				wg.Done()
 			}()
-			for _, u := range users {
-				for _, p := range passwords {
-					wg.Add(1)
-					sem <- struct{}{}
-					go func(h parse.Host, u string, p string) {
-						defer func() {
-							<-sem
-							wg.Done()
-							bar.Increment()
-						}()
-						service := mapService(h.Service)
-						if *serviceType != "all" && !contains(getSupportedServices(*serviceType), service) {
-							return
-						}
-						bruteDone := make(chan bool)
-						go func() {
-							brute(h, u, p)
-							bruteDone <- true
-						}()
+			if service == "vnc" || service == "snmp" {
+				u := ""
+				for _, h := range hostsList {
+					if h.Service == service {
+						for _, p := range passwords {
+							wg.Add(1)
+							sem <- struct{}{}
+							go func(h modules.Host, u string, p string) {
+								defer func() {
+									<-sem
+									wg.Done()
+									bar.Increment()
+								}()
+								bruteDone := make(chan bool)
+								go func() {
+									brute.RunBrute(h, u, p)
+									bruteDone <- true
+								}()
 
-						select {
-						case <-bruteDone:
-						case <-time.After(time.Duration(*timeout) * time.Second):
-							pterm.Color(pterm.FgRed).Println("Bruteforce timeout:", h.Service, "on host", h.Host, "port", h.Port, "with username", u, "and password", p)
+								select {
+								case <-bruteDone:
+								case <-time.After(time.Duration(*timeout) * time.Second):
+									pterm.Color(pterm.FgRed).Println("Bruteforce timeout:", h.Service, "on host", h.Host, "port", h.Port, "with username", u, "and password", p)
+								}
+							}(h, u, p)
 						}
-					}(h, u, p)
+					}
+				}
+			} else {
+				for _, h := range hostsList {
+					if h.Service == service {
+						for _, u := range users {
+							for _, p := range passwords {
+								wg.Add(1)
+								sem <- struct{}{}
+								go func(h modules.Host, u string, p string) {
+									defer func() {
+										<-sem
+										wg.Done()
+										bar.Increment()
+									}()
+									bruteDone := make(chan bool)
+									go func() {
+										brute.RunBrute(h, u, p)
+										bruteDone <- true
+									}()
+
+									select {
+									case <-bruteDone:
+									case <-time.After(time.Duration(*timeout) * time.Second):
+										pterm.Color(pterm.FgRed).Println("Bruteforce timeout:", h.Service, "on host", h.Host, "port", h.Port, "with username", u, "and password", p)
+									}
+								}(h, u, p)
+							}
+						}
+					}
 				}
 			}
-		}(h)
+		}(service)
 	}
 	wg.Wait()
 	for i := 0; i < cap(sem); i++ {
 		sem <- struct{}{}
 	}
 	bar.Stop()
-	if len(getSupportedServices(*serviceType)) > 0 {
-		pterm.DefaultSection.Println("Supported services:", strings.Join(getSupportedServices(*serviceType), ", "))
-	}
 }
