@@ -370,7 +370,9 @@ func (h *Host) Parse(host string) ([]Host, error) {
 
 func generateHostList(ipnet *net.IPNet) []net.IP {
 	var ips []net.IP
-	for ip := ipnet.IP.Mask(ipnet.Mask); ipnet.Contains(ip); inc(ip) {
+	startIP := ipnet.IP.Mask(ipnet.Mask)
+	startIP[len(startIP)-1]++
+	for ip := startIP; ipnet.Contains(ip); inc(ip) {
 		if !ip.IsLoopback() && !ip.IsLinkLocalUnicast() && !ip.IsLinkLocalMulticast() && !isBroadcast(ip, ipnet.Mask) {
 			ips = append(ips, append([]byte(nil), ip...))
 		}
