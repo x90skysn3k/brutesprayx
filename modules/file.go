@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
@@ -18,7 +17,7 @@ func Contains(s []string, e string) bool {
 }
 
 func IsFile(fileName string) bool {
-	if _, err := os.Stat(fileName); err == nil && filepath.Ext(fileName) == "" {
+	if _, err := os.Stat(fileName); err == nil {
 		return true
 	}
 	return false
