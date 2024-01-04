@@ -316,7 +316,22 @@ func ParseList(filename string) (map[Host]int, error) {
 }
 
 func (h *Host) Parse(host string) ([]Host, error) {
-	supportedServices := []string{"ssh", "ftp", "smtp", "mssql", "telnet", "smbnt", "postgres", "imap", "pop3", "snmp", "mysql", "vmauthd", "asterisk", "vnc"}
+	supportedServices := map[string]int{
+		"ssh":      22,
+		"ftp":      21,
+		"smtp":     25,
+		"mssql":    1433,
+		"telnet":   23,
+		"smbnt":    139,
+		"postgres": 5432,
+		"imap":     143,
+		"pop3":     110,
+		"snmp":     161,
+		"mysql":    3306,
+		"vmauthd":  5060,
+		"asterisk": 10000,
+		"vnc":      5900,
+	}
 
 	parts := strings.Split(host, "://")
 	if len(parts) != 2 {
@@ -327,27 +342,25 @@ func (h *Host) Parse(host string) ([]Host, error) {
 	remaining := parts[1]
 
 	portIndex := strings.LastIndex(remaining, ":")
-	if portIndex == -1 {
-		return nil, fmt.Errorf("invalid host format: %s", host)
-	}
 
-	portStr := remaining[portIndex+1:]
-	remaining = remaining[:portIndex]
+	var portStr string
+	if portIndex == -1 {
+		portStr = ""
+	} else {
+		portStr = remaining[portIndex+1:]
+		remaining = remaining[:portIndex]
+	}
 
 	port, err := strconv.Atoi(portStr)
 	if err != nil {
-		return nil, fmt.Errorf("invalid port in host: %s", host)
-	}
-
-	var found bool
-	for _, services := range supportedServices {
-		if service == services {
-			found = true
-			break
+		if portStr == "" {
+			port = supportedServices[service]
+		} else {
+			return nil, fmt.Errorf("invalid port in host: %s", host)
 		}
 	}
 
-	if !found {
+	if _, ok := supportedServices[service]; !ok {
 		return nil, fmt.Errorf("unsupported service: %s", service)
 	}
 
