@@ -1,6 +1,6 @@
 # BruteSprayX
 
-![Version](https://img.shields.io/badge/Version-2.1.1-red)[![goreleaser](https://github.com/x90skysn3k/brutesprayx/actions/workflows/release.yml/badge.svg)](https://github.com/x90skysn3k/brutesprayx/actions/workflows/release.yml)
+![Version](https://img.shields.io/badge/Version-2.1.2-red)[![goreleaser](https://github.com/x90skysn3k/brutesprayx/actions/workflows/release.yml/badge.svg)](https://github.com/x90skysn3k/brutesprayx/actions/workflows/release.yml)
 
 Created by: Shane Young/@t1d3nio && Jacob Robles/@shellfail 
 
