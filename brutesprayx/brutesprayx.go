@@ -18,6 +18,8 @@ import (
 
 var masterServiceList = []string{"ssh", "ftp", "smtp", "mssql", "telnet", "smbnt", "postgres", "imap", "pop3", "snmp", "mysql", "vmauthd", "asterisk", "vnc"}
 
+var alphaServiceList = []string{"asterisk"}
+
 var version = "v2.1.2"
 
 func Execute() {
@@ -143,6 +145,11 @@ func Execute() {
 	}()
 
 	for _, service := range supportedServices {
+		for _, alpha := range alphaServiceList {
+			if alpha == service {
+				modules.PrintWarningAlpha(service)
+			}
+		}
 		wg.Add(1)
 		sem <- struct{}{}
 		go func(service string) {

@@ -62,3 +62,7 @@ func PrintResult(service string, host string, port int, user string, pass string
 		}
 	}
 }
+
+func PrintWarningAlpha(service string) {
+	pterm.Color(pterm.BgYellow).Println("Warning, the module", service, "is Alpha and has not been tested")
+}
