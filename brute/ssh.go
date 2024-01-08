@@ -26,9 +26,6 @@ func BruteSSH(host string, port int, user, password string) bool {
 	done := make(chan result)
 	go func() {
 		client, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", host, port), config)
-		if err == nil {
-			err = client.Wait()
-		}
 		done <- result{client, err}
 	}()
 

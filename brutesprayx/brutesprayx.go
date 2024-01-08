@@ -18,7 +18,7 @@ import (
 
 var masterServiceList = []string{"ssh", "ftp", "smtp", "mssql", "telnet", "smbnt", "postgres", "imap", "pop3", "snmp", "mysql", "vmauthd", "asterisk", "vnc"}
 
-var version = "v2.1.1"
+var version = "v2.1.2"
 
 func Execute() {
 	user := flag.String("u", "", "Username or user list to brute force")

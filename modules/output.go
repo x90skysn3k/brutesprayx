@@ -54,11 +54,11 @@ func PrintResult(service string, host string, port int, user string, pass string
 			filename := filepath.Base(host)
 			WriteToFile(filename, content)
 		}
-	}
-	if service == "vnc" {
-		pterm.Color(pterm.FgLightRed).Println("Attempt", service, "on host", host, "port", port, "with password", pass, getResultString(result))
 	} else {
-		pterm.Color(pterm.FgLightRed).Println("Attempt", service, "on host", host, "port", port, "with username", user, "and password", pass, getResultString(result))
-
+		if service == "vnc" {
+			pterm.Color(pterm.FgLightRed).Println("Attempt", service, "on host", host, "port", port, "with password", pass, getResultString(result))
+		} else {
+			pterm.Color(pterm.FgLightRed).Println("Attempt", service, "on host", host, "port", port, "with username", user, "and password", pass, getResultString(result))
+		}
 	}
 }
