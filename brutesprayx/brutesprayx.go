@@ -21,13 +21,13 @@ var masterServiceList = []string{"ssh", "ftp", "smtp", "mssql", "telnet", "smbnt
 var version = "v2.1.2"
 
 func Execute() {
-	user := flag.String("u", "", "Username or user list to brute force")
-	password := flag.String("p", "", "Password or password file to use for brute force")
+	user := flag.String("u", "", "Username or user list to bruteforce")
+	password := flag.String("p", "", "Password or password file to use for bruteforce")
 	threads := flag.Int("t", 10, "Number of threads to use")
-	serviceType := flag.String("s", "all", "Default all, Service type: ssh, ftp, smtp, etc")
+	serviceType := flag.String("s", "all", "Service type: ssh, ftp, smtp, etc; Default all")
 	listServices := flag.Bool("S", false, "List all supported services")
-	file := flag.String("f", "", "File to parse")
-	host := flag.String("H", "", "Target in the format service://host:port")
+	file := flag.String("f", "", "File to parse; Supported: Nmap, Nessus, Nexpose, Lists, etc")
+	host := flag.String("H", "", "Target in the format service://host:port, CIDR ranges supported,\n default port will be used if not specified")
 	quiet := flag.Bool("q", false, "Supress the banner")
 	timeout := flag.Int("T", 15, "Set timeout of bruteforce attempts")
 
